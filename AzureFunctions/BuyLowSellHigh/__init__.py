@@ -4,13 +4,15 @@ import logging
 import azure.functions as func
 
 # Custom imports
-import alpaca_trade_api as tradeapi
+from alpaca.data import StockHistoricalDataClient
+from alpaca.data.timeframe import TimeFrame
+from alpaca.data.requests import StockBarsRequest
+from alpaca.trading.client import TradingClient
 import os
-
-api = tradeapi.REST(os.getenv("API_KEY_ID"), os.getenv("SECRET_ACCESS_KEY"), base_url="https://paper-api.alpaca.markets")
 
 # Large cap stocks
 large_caps = ['AAPL', 'AMZN', 'MSFT', 'GOOG', 'GOOGL', 'FB', 'TSLA', 'NVDA', 'PYPL', 'ADBE', 'NFLX', 'AVGO', 'CSCO', 'INTC', 'AMGN', 'QCOM', 'TXN', 'COST', 'MDLZ', 'SBUX', 'BIIB', 'TMUS', 'ISRG', 'CHTR', 'BKNG']
+target_stock = 'TSLA'
 
 def check_price_dip(ticker):
     # Get the latest price data for the stock
@@ -32,25 +34,21 @@ def main(mytimer: func.TimerRequest) -> None:
     utc_timestamp = datetime.datetime.utcnow().replace(
         tzinfo=datetime.timezone.utc).isoformat()
 
-    if mytimer.past_due:
-        logging.info('The timer is past due!')
-
     logging.info('Python timer trigger function ran at %s', utc_timestamp)
 
-    # Loop through the top stocks and check if the price has dipped
-    for stock in large_caps:
-        if check_price_dip(stock.symbol):
-            # Buy the stock if the price has dipped
-            api.submit_order(
-                symbol=stock.symbol,
-                qty=1,
-                side='buy',
-                type='limit',
-                time_in_force='gtc',
-                limit_price=stock_price,
-                extended_hours=False
-            )
-            # Wait for a few seconds to avoid hitting the rate limit
-            time.sleep(3)
+    api_key_id = os.getenv("API_KEY_ID")
+    secret_access_key = os.getenv("SECRET_ACCESS_KEY")
+    historical_data_client = StockHistoricalDataClient(api_key_id, secret_access_key)
+    trading_client = TradingClient(api_key_id, secret_access_key, paper=True)
+
+    request_params = StockBarsRequest(
+        symbol_or_symbols=[target_stock],
+        timeframe=TimeFrame.Day,
+        start="2022-02-01 00:00:00"
+    )
+
+    bars = historical_data_client.get_stock_bars(request_params)
+    bars_df = bars.df
+    print(bars_df)
 
     print("Dip buying complete")

@@ -8,6 +8,8 @@ from alpaca.data import StockHistoricalDataClient
 from alpaca.data.timeframe import TimeFrame
 from alpaca.data.requests import StockBarsRequest
 from alpaca.trading.client import TradingClient
+from alpaca.trading.requests import GetAssetsRequest, MarketOrderRequest
+from alpaca.trading.enums import AssetClass, OrderSide, TimeInForce
 import os
 
 # Large cap stocks
@@ -49,6 +51,25 @@ def main(mytimer: func.TimerRequest) -> None:
 
     bars = historical_data_client.get_stock_bars(request_params)
     bars_df = bars.df
-    print(bars_df)
+    logging.info(bars_df)
 
-    print("Dip buying complete")
+    # TODO: Perform fancy analysis on the data
+
+    # Get all current assets
+    assets = trading_client.get_all_positions()
+    logging.info(assets)
+
+    # Submit a market order to buy 1 share of the stock
+    # preparing order
+    market_order_data = MarketOrderRequest(
+                        symbol="MSFT",
+                        qty=0.5,
+                        side=OrderSide.BUY,
+                        time_in_force=TimeInForce.DAY
+                        )
+
+    # Submit buy order
+    market_order = trading_client.submit_order(
+                    order_data=market_order_data
+                )
+    

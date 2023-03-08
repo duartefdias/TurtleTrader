@@ -5,5 +5,9 @@
 # Azure default imports
 azure-functions
 
+# Azure additional imports
+azure-data-tables
+
 # Custom imports
 alpaca-py
+uuid

@@ -19,7 +19,7 @@ import os
 import uuid
 
 # Set target stock
-target_stock = "MSFT"
+target_stock = "TSLA"
 
 def main(mytimer: func.TimerRequest) -> None:
     # Get the current time
